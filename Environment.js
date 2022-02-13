@@ -6,8 +6,9 @@ class Environment {
   /**
    * Creates a variable with the given name and value
    */
-  constructor(record = {}) {
+  constructor(record = {}, parent = null) {
     this.record = record;
+    this.parent = parent;
   }
 
   /**
@@ -19,14 +20,34 @@ class Environment {
   }
 
   /**
+   * Updates an existing variable
+   */
+  assign(name, value) {
+    this.resolve(name).record[name] = value;
+    return value;
+  }
+  /**
    * Returns the value of a defined variable,
    * or throws if the variable is not defined
    */
   lookup(name) {
-    if (!this.record.hasOwnProperty(name)) {
-      throw new ReferenceError(`Variable "${name}" is not defined.`);
+    return this.resolve(name).record[name];
+  }
+
+  /**
+   * Returns specific environment in which a variable is defined (identifier resolution)
+   * or throws if the variable is not defined
+   */
+  resolve(name) {
+    if (this.record.hasOwnProperty(name)) {
+      return this;
     }
-    return this.record[name];
+
+    if (this.parent == null) {
+      // in global env
+      throw new ReferenceError(`Variable "${name}" is not defined.`); //todo  Error handling in separate file
+    }
+    return this.parent.resolve(name);
   }
 }
 

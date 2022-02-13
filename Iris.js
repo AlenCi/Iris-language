@@ -27,22 +27,23 @@ class Iris {
     /*------------------ Math operations -----------------*/
 
     if (exp[0] === "+") {
-      return this.eval(exp[1]) + this.eval(exp[2]);
+      return this.eval(exp[1], env) + this.eval(exp[2], env);
     }
     if (exp[0] === "*") {
-      return this.eval(exp[1]) * this.eval(exp[2]);
+      return this.eval(exp[1], env) * this.eval(exp[2], env);
     }
     if (exp[0] === "-") {
-      return this.eval(exp[1]) - this.eval(exp[2]);
+      return this.eval(exp[1], env) - this.eval(exp[2], env);
     }
     if (exp[0] === "/") {
-      return this.eval(exp[1]) / this.eval(exp[2]);
+      return this.eval(exp[1], env) / this.eval(exp[2], env);
     }
 
     /*------------------ Block -----------------*/
 
     if (exp[0] === "begin") {
-      return this._evalBlock(exp, env);
+      const blockEnv = new Environment({}, env);
+      return this._evalBlock(exp, blockEnv);
     }
 
     /*------------------ Variable declaration -----------------*/
@@ -50,7 +51,15 @@ class Iris {
     if (exp[0] === "var") {
       const [_, name, value] = exp;
 
-      return env.define(name, this.eval(value));
+      return env.define(name, this.eval(value,env));
+    }
+
+    /*------------------ Variable set -----------------*/
+    
+    if(exp[0] === "set"){
+      const [_, name, value] = exp;
+
+      return env.assign(name, this.eval(value,env));
     }
 
     /*------------------ Variable access -----------------*/
@@ -80,7 +89,11 @@ function isVariableName(exp) {
   return typeof exp === "string" && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(exp);
 }
 
-/*------------------ Tests -----------------*/
+/*-------------------------------- Tests ------------------------------*/
+
+
+/*------------------ Global env -----------------*/
+
 
 const iris = new Iris(
   new Environment({
@@ -90,6 +103,10 @@ const iris = new Iris(
     VERSION: "0.1",
   })
 );
+
+
+/*------- Self eval -------*/
+
 
 assert.strictEqual(iris.eval(1), 1);
 assert.strictEqual(iris.eval('"Rob"'), "Rob");
@@ -124,5 +141,23 @@ assert.strictEqual(
   230
 );
 
+/*------- Nested -------*/
+
+assert.strictEqual(
+  iris.eval(["begin", ["var", "x", 10], ["begin", ["var", "x", 2], "x"], "x"]),
+  10
+);
+
+/*------- Identifier resolution / bindings -------*/
+
+assert.strictEqual(
+  iris.eval(["begin", ["var", "value", 10],["var","result", ["begin", ["var", "x", ["+","value",10]], "x"]], "result"]),
+  20
+);
+
+assert.strictEqual(
+  iris.eval(["begin", ["var", "data", 10],["begin",["set","data",100]],"data"]),
+  100
+);
 
 console.log("All assertions passed!");

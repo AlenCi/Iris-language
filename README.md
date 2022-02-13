@@ -12,13 +12,14 @@ It was created for learning purposes with clear goals in mind:
 * Implicit return values
 * Everything is an expression
 
+Practising design paradigms and version control is also a side goal of this project.
 <!-- ROADMAP -->
 ## Roadmap
 
 * [x] Add self-evaluating expressions
 * [x] Add basic operations
-* [x] Add variable support
-* [ ] Add (nested) function scope support
+* [x] Add variable support (declare, assign)
+* [x] Add (nested) function scope support with identifier resolution
 * [ ] Add control flow
 
 More will be added as the project progresses.
