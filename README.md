@@ -20,11 +20,8 @@ Practising design paradigms and version control is also a side goal of this proj
 * [x] Add basic operations
 * [x] Add variable support (declare, assign)
 * [x] Add (nested) function scope support with identifier resolution
-* [ ] Add control flow
-* [ ] Add loops
+* [x] Add control flow
+* [x] Add loops
+* [ ] Add (native) functions
 
 More will be added as the project progresses.
-
-## License
-
-Distributed under the MIT License.

@@ -1,5 +1,5 @@
 const assert = require("assert");
-
+const testUtil = require("./test-utils");
 /*------------------ Blocks -----------------*/
 
 module.exports = (iris) => {
@@ -45,5 +45,15 @@ module.exports = (iris) => {
       "data",
     ]),
     100
+  );
+
+  testUtil.test(iris,
+    `
+    (begin
+      (var x 10)
+      (var y 20)               
+      (+ (* x 10) y)
+    )`,
+    120
   );
 };

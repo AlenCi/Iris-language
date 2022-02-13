@@ -5,6 +5,9 @@ const tests = [
   require("./math-test.js"),
   require("./variables-test.js"),
   require("./block-test.js"),
+  require("./if-test.js"),
+  require("./while-test.js"),
+  
 ];
 
 /*------------------ Global env -----------------*/

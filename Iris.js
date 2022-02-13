@@ -38,6 +38,26 @@ class Iris {
       return this.eval(exp[1], env) / this.eval(exp[2], env);
     }
 
+    /*------------------ Comparison operators -----------------*/
+    if (exp[0] === ">") {
+      return this.eval(exp[1], env) > this.eval(exp[2], env);
+    }
+    if (exp[0] === "<") {
+      return this.eval(exp[1], env) < this.eval(exp[2], env);
+    }
+    if (exp[0] === ">=") {
+      return this.eval(exp[1], env) >= this.eval(exp[2], env);
+    }
+    if (exp[0] === "<=") {
+      return this.eval(exp[1], env) <= this.eval(exp[2], env);
+    }
+    if (exp[0] === "!=") {
+      return this.eval(exp[1], env) !== this.eval(exp[2], env);
+    }
+    if (exp[0] === "==") {
+      return this.eval(exp[1], env) === this.eval(exp[2], env);
+    }
+
     /*------------------ Block -----------------*/
 
     if (exp[0] === "begin") {
@@ -50,20 +70,42 @@ class Iris {
     if (exp[0] === "var") {
       const [_, name, value] = exp;
 
-      return env.define(name, this.eval(value,env));
+      return env.define(name, this.eval(value, env));
     }
 
     /*------------------ Variable set -----------------*/
-    
-    if(exp[0] === "set"){
+
+    if (exp[0] === "set") {
       const [_, name, value] = exp;
 
-      return env.assign(name, this.eval(value,env));
+      return env.assign(name, this.eval(value, env));
     }
 
     /*------------------ Variable access -----------------*/
     if (isVariableName(exp)) {
       return env.lookup(exp);
+    }
+
+    /*------------------ If expression -----------------*/
+
+    if (exp[0] === "if") {
+      const [_tag, condition, main, alternate] = exp;
+      if (this.eval(condition, env)) {
+        return this.eval(main, env);
+      } else {
+        return this.eval(alternate, env);
+      }
+    }
+
+    /*------------------ While expression -----------------*/
+
+    if (exp[0] === "while") {
+      const [_tag, condition, body] = exp;
+      let result;
+      while (this.eval(condition, env)) {
+        result = this.eval(body, env);
+      }
+      return result;
     }
 
     throw `Unimplemented: ${JSON.stringify(exp)}`;
