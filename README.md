@@ -21,6 +21,7 @@ Practising design paradigms and version control is also a side goal of this proj
 * [x] Add variable support (declare, assign)
 * [x] Add (nested) function scope support with identifier resolution
 * [ ] Add control flow
+* [ ] Add loops
 
 More will be added as the project progresses.
 

@@ -1,4 +1,3 @@
-const assert = require("assert");
 const Environment = require("./Environment");
 /**
  * Iris Interpreter
@@ -89,75 +88,4 @@ function isVariableName(exp) {
   return typeof exp === "string" && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(exp);
 }
 
-/*-------------------------------- Tests ------------------------------*/
-
-
-/*------------------ Global env -----------------*/
-
-
-const iris = new Iris(
-  new Environment({
-    null: null,
-    true: true,
-    false: false,
-    VERSION: "0.1",
-  })
-);
-
-
-/*------- Self eval -------*/
-
-
-assert.strictEqual(iris.eval(1), 1);
-assert.strictEqual(iris.eval('"Rob"'), "Rob");
-
-/*------- Math -------*/
-
-assert.strictEqual(iris.eval(["+", 1, 5]), 6);
-assert.strictEqual(iris.eval(["*", 1, 5]), 5);
-assert.strictEqual(iris.eval(["+", ["+", 3, 2], 5]), 10);
-assert.strictEqual(iris.eval(["*", ["*", 3, 2], 5]), 30);
-
-/*------- Variables -------*/
-
-assert.strictEqual(iris.eval(["var", "x", 10]), 10);
-assert.strictEqual(iris.eval("x"), 10);
-assert.strictEqual(iris.eval(["var", "y", 30]), 30);
-assert.strictEqual(iris.eval("y"), 30);
-
-assert.strictEqual(iris.eval(["var", "isUser", "true"]), true);
-assert.strictEqual(iris.eval(["var", "z", ["*", 2, 2]]), 4);
-assert.strictEqual(iris.eval("z"), 4);
-
-/*------------------ Blocks -----------------*/
-
-assert.strictEqual(
-  iris.eval([
-    "begin",
-    ["var", "x", 10],
-    ["var", "y", 20],
-    ["+", ["*", "x", "y"], 30],
-  ]),
-  230
-);
-
-/*------- Nested -------*/
-
-assert.strictEqual(
-  iris.eval(["begin", ["var", "x", 10], ["begin", ["var", "x", 2], "x"], "x"]),
-  10
-);
-
-/*------- Identifier resolution / bindings -------*/
-
-assert.strictEqual(
-  iris.eval(["begin", ["var", "value", 10],["var","result", ["begin", ["var", "x", ["+","value",10]], "x"]], "result"]),
-  20
-);
-
-assert.strictEqual(
-  iris.eval(["begin", ["var", "data", 10],["begin",["set","data",100]],"data"]),
-  100
-);
-
-console.log("All assertions passed!");
+module.exports = Iris;
