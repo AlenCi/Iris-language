@@ -7,7 +7,7 @@ class Iris {
   /**
    * Evaluates an expression in the given env
    */
-  constructor(global = new Environment()) {
+  constructor(global = GlobalEnvironment) {
     this.global = global;
   }
 
@@ -15,54 +15,20 @@ class Iris {
    * Evaluates an expression in the given env
    */
   eval(exp, env = this.global) {
-    /*------------------ Self-eval expressions -----------------*/
+    /*------------------ Self-evaluating expressions -----------------*/
 
-    if (isNumber(exp)) {
+    if (this._isNumber(exp)) {
       return exp;
     }
-    if (isString(exp)) {
+    if (this._isString(exp)) {
       return exp.slice(1, -1);
-    }
-    /*------------------ Math operations -----------------*/
-
-    if (exp[0] === "+") {
-      return this.eval(exp[1], env) + this.eval(exp[2], env);
-    }
-    if (exp[0] === "*") {
-      return this.eval(exp[1], env) * this.eval(exp[2], env);
-    }
-    if (exp[0] === "-") {
-      return this.eval(exp[1], env) - this.eval(exp[2], env);
-    }
-    if (exp[0] === "/") {
-      return this.eval(exp[1], env) / this.eval(exp[2], env);
-    }
-
-    /*------------------ Comparison operators -----------------*/
-    if (exp[0] === ">") {
-      return this.eval(exp[1], env) > this.eval(exp[2], env);
-    }
-    if (exp[0] === "<") {
-      return this.eval(exp[1], env) < this.eval(exp[2], env);
-    }
-    if (exp[0] === ">=") {
-      return this.eval(exp[1], env) >= this.eval(exp[2], env);
-    }
-    if (exp[0] === "<=") {
-      return this.eval(exp[1], env) <= this.eval(exp[2], env);
-    }
-    if (exp[0] === "!=") {
-      return this.eval(exp[1], env) !== this.eval(exp[2], env);
-    }
-    if (exp[0] === "==") {
-      return this.eval(exp[1], env) === this.eval(exp[2], env);
     }
 
     /*------------------ Block -----------------*/
 
     if (exp[0] === "begin") {
       const blockEnv = new Environment({}, env);
-      return this._evalBlock(exp, blockEnv);
+      return this._evalBlock(exp, blockEnv); // Evaluates the whole block in a nested environment
     }
 
     /*------------------ Variable declaration -----------------*/
@@ -82,14 +48,18 @@ class Iris {
     }
 
     /*------------------ Variable access -----------------*/
-    if (isVariableName(exp)) {
+    if (this._isVariableName(exp)) {
       return env.lookup(exp);
     }
 
     /*------------------ If expression -----------------*/
 
     if (exp[0] === "if") {
-      const [_tag, condition, main, alternate] = exp;
+      /*
+        Main gets evaluated when true
+        Alternate gets evaluated when false
+      */
+      const [_, condition, main, alternate] = exp;
       if (this.eval(condition, env)) {
         return this.eval(main, env);
       } else {
@@ -100,7 +70,7 @@ class Iris {
     /*------------------ While expression -----------------*/
 
     if (exp[0] === "while") {
-      const [_tag, condition, body] = exp;
+      const [_, condition, body] = exp;
       let result;
       while (this.eval(condition, env)) {
         result = this.eval(body, env);
@@ -108,9 +78,60 @@ class Iris {
       return result;
     }
 
+    /*------------------ Function declaration -----------------*/
+
+    if (exp[0] === "def") {
+      const [_, name, params, body] = exp;
+      const fn = {
+        params,
+        body,
+        env,
+      };
+
+      return env.define(name, fn); // mapping from property to method
+    }
+
+    /*------------------ Function calls -----------------*/
+
+    if (Array.isArray(exp)) {
+      const fn = this.eval(exp[0], env);
+
+      const args = exp.slice(1).map((arg) => this.eval(arg, env));
+
+      /*------- Native function -------*/
+
+      if (typeof fn === "function") {
+        return fn(...args);
+      }
+
+      /*------- Custom function -------*/
+
+      const activationRecord = {};
+
+      fn.params.forEach((param, index) => {
+        activationRecord[param] = args[index];
+      });
+
+      const activationEnv = new Environment(activationRecord, fn.env);
+
+      return this._evalBody(fn.body, activationEnv);
+    }
+
     throw `Unimplemented: ${JSON.stringify(exp)}`;
   }
+
+  /*------- Helper methods -------*/
+
+  _evalBody(body, env) {
+    // Method body can be either a block or an expression
+    if (body[0] === "begin") {
+      return this._evalBlock(body, env);
+    }
+    return this.eval(body, env);
+  }
+
   _evalBlock(block, env) {
+    // Evaluates every expression within a block
     let result;
     const [_tag, ...expressions] = block;
     expressions.forEach((exp) => {
@@ -118,16 +139,72 @@ class Iris {
     });
     return result;
   }
+
+  _isNumber(exp) {
+    return typeof exp === "number";
+  }
+  _isString(exp) {
+    return typeof exp === "string" && exp[0] === '"' && exp.slice(-1) === '"';
+  }
+  _isVariableName(exp) {
+    return typeof exp === "string" && /^[+\-*/<>=a-zA-Z0-9_]*$/.test(exp); // Symbols are variables
+  }
 }
 
-function isNumber(exp) {
-  return typeof exp === "number";
-}
-function isString(exp) {
-  return typeof exp === "string" && exp[0] === '"' && exp.slice(-1) === '"';
-}
-function isVariableName(exp) {
-  return typeof exp === "string" && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(exp);
-}
+/**
+ * Default global environment
+ */
+
+const GlobalEnvironment = new Environment({
+  null: null,
+  true: true,
+  false: false,
+  VERSION: "0.1",
+
+  /*------------------ Math operations -----------------*/
+
+  // String property accessors that map to methods
+
+  "+"(op1, op2) {
+    return op1 + op2;
+  },
+  "-"(op1, op2 = null) {
+    if (op2 == null) {
+      return -op1;
+    }
+    return op1 - op2;
+  },
+  "*"(op1, op2) {
+    return op1 * op2;
+  },
+  "/"(op1, op2) {
+    return op1 / op2;
+  },
+  /*------------------ Comparison operators -----------------*/
+  ">"(op1, op2) {
+    return op1 > op2;
+  },
+  "<"(op1, op2) {
+    return op1 < op2;
+  },
+  ">="(op1, op2) {
+    return op1 >= op2;
+  },
+  "<="(op1, op2) {
+    return op1 <= op2;
+  },
+  "="(op1, op2) {
+    return op1 === op2;
+  },
+  "!="(op1, op2) {
+    return op1 !== op2;
+  },
+
+  /*------- Console output -------*/
+
+  print(...args) {
+    console.log(...args);
+  },
+});
 
 module.exports = Iris;

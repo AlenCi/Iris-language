@@ -4,7 +4,9 @@
  */
 class Environment {
   /**
-   * Creates a variable with the given name and value
+   * Creates a new environment
+   * @param {*} record pre-recorded values
+   * @param {*} parent parent link
    */
   constructor(record = {}, parent = null) {
     this.record = record;
@@ -44,9 +46,10 @@ class Environment {
     }
 
     if (this.parent == null) {
-      // in global env
+      // We are in a global env and don't have the variable
       throw new ReferenceError(`Variable "${name}" is not defined.`); //todo  Error handling in separate file
     }
+    // Recurse
     return this.parent.resolve(name);
   }
 }

@@ -1,40 +1,54 @@
 const assert = require("assert");
-const testUtil = require("./test-utils");
+const { test } = require("./test-utils");
 /*------------------ Blocks -----------------*/
 
 module.exports = (iris) => {
-  assert.strictEqual(
-    iris.eval([
-      "begin",
-      ["var", "x", 10],
-      ["var", "y", 20],
-      ["+", ["*", "x", "y"], 30],
-    ]),
-    230
+  test(
+    iris,
+    `
+    (begin
+      (var x 3)
+      (var y 2)
+      (+ (* x y) 20)
+      
+    )
+  `,
+    26
   );
 
   /*------- Nested -------*/
 
-  assert.strictEqual(
-    iris.eval([
-      "begin",
-      ["var", "x", 10],
-      ["begin", ["var", "x", 2], "x"],
-      "x",
-    ]),
-    10
+  test(
+    iris,
+    `
+    (begin
+      (var x 3)
+      (begin
+        (var x 2)
+      )
+      x
+    )
+    `,
+    3
   );
 
   /*------- Identifier resolution / bindings -------*/
 
-  assert.strictEqual(
-    iris.eval([
-      "begin",
-      ["var", "value", 10],
-      ["var", "result", ["begin", ["var", "x", ["+", "value", 10]], "x"]],
-      "result",
-    ]),
-    20
+  test(
+    iris,
+    `
+    (begin
+      (var x 3)
+      (var y 
+        (begin
+          (var z (+ x 5))
+          z
+        )
+      )
+      y
+    )
+    `,
+    8
   );
 
   assert.strictEqual(
@@ -45,15 +59,5 @@ module.exports = (iris) => {
       "data",
     ]),
     100
-  );
-
-  testUtil.test(iris,
-    `
-    (begin
-      (var x 10)
-      (var y 20)               
-      (+ (* x 10) y)
-    )`,
-    120
   );
 };

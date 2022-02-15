@@ -5,7 +5,7 @@
 
 Iris is a lightweight dynamic programming language with a functional core and support for OOP.
 
-It was created for learning purposes with clear goals in mind:
+It was created purely for learning about programming language design with clear goals in mind:
 
 * Simple syntax
 * Functions are closures
@@ -13,6 +13,7 @@ It was created for learning purposes with clear goals in mind:
 * Everything is an expression
 
 Practising design paradigms and version control is also a side goal of this project.
+
 <!-- ROADMAP -->
 ## Roadmap
 
@@ -25,3 +26,16 @@ Practising design paradigms and version control is also a side goal of this proj
 * [ ] Add (native) functions
 
 More will be added as the project progresses.
+
+<!-- Installation -->
+## Installation
+
+TBA
+
+## Syntax
+
+TBA
+
+## Documentation
+
+TBA
