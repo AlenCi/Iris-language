@@ -4,9 +4,9 @@ const { test } = require("./test-utils");
 /*------- Custom functions -------*/
 
 module.exports = (iris) => {
-  test(
-    iris,
-    `
+    test(
+        iris,
+        `
     (begin 
         
         (def square (x)
@@ -15,12 +15,12 @@ module.exports = (iris) => {
         (square 2)
     )
     `,
-    4
-  );
+        4
+    );
 
-  test(
-    iris,
-    `
+    test(
+        iris,
+        `
     (begin 
         
         (def calc (x y)
@@ -33,13 +33,12 @@ module.exports = (iris) => {
         (calc 10 20)
     )
     `,
-    230
-  );
+        230
+    );
 
-
-  test(
-    iris,
-    `
+    test(
+        iris,
+        `
     (begin 
 
         (var val 100)
@@ -61,6 +60,24 @@ module.exports = (iris) => {
         (fn 30)
     )
     `,
-    160
-  );
+        160
+    );
+
+    test(
+        iris,
+        `
+    (begin 
+        
+        (def factorial (x)
+            (if (= x 1)
+                1
+                (* x (factorial (- x 1)))
+            )
+        )
+        
+        (factorial 3)
+    )
+    `,
+        6
+    );
 };

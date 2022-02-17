@@ -23,7 +23,8 @@ Practising design paradigms and version control is also a side goal of this proj
 * [x] Add (nested) function scope support with identifier resolution
 * [x] Add control flow
 * [x] Add loops
-* [ ] Add (native) functions
+* [x] Add (native) functions
+* [x] Add lambda functions
 
 More will be added as the project progresses.
 
