@@ -9,17 +9,23 @@ module.exports = (iris) => {
 		iris,
 		`
 		(begin
-			  (var x 1)
-			  (var y 0)
-			  (if (> x 1)
-				  (set y 2)
-				  (set y 3)   
-			  )  
-		
-			  y
-		
-		)  
+			(var x 3)
+			(++ x)    
+			
+		)
+	
 		`,
-		3
+		4
 	);
+
+	test(iris,
+		`
+		(begin
+			(var x 3)
+			(-- x)    
+
+		)
+
+		`,
+		 2)
 };

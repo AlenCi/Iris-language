@@ -44,21 +44,21 @@ let __loc;
 
 function yyloc(start, end) {
   if (!yy.options.captureLocations) {
-    return null;
+	return null;
   }
 
   // Epsilon doesn't produce location.
   if (!start || !end) {
-    return start || end;
+	return start || end;
   }
 
   return {
-    startOffset: start.startOffset,
-    endOffset: end.endOffset,
-    startLine: start.startLine,
-    endLine: end.endLine,
-    startColumn: start.startColumn,
-    endColumn: end.endColumn,
+	startOffset: start.startOffset,
+	endOffset: end.endOffset,
+	startLine: start.startLine,
+	endLine: end.endLine,
+	startColumn: start.startColumn,
+	endColumn: end.endColumn,
   };
 }
 
@@ -119,114 +119,114 @@ const EOF_TOKEN = {
 
 tokenizer = {
   initString(string) {
-    this._string = string;
-    this._cursor = 0;
+	this._string = string;
+	this._cursor = 0;
 
-    this._states = ['INITIAL'];
-    this._tokensQueue = [];
+	this._states = ['INITIAL'];
+	this._tokensQueue = [];
 
-    this._currentLine = 1;
-    this._currentColumn = 0;
-    this._currentLineBeginOffset = 0;
+	this._currentLine = 1;
+	this._currentColumn = 0;
+	this._currentLineBeginOffset = 0;
 
-    /**
-     * Matched token location data.
-     */
-    this._tokenStartOffset = 0;
-    this._tokenEndOffset = 0;
-    this._tokenStartLine = 1;
-    this._tokenEndLine = 1;
-    this._tokenStartColumn = 0;
-    this._tokenEndColumn = 0;
+	/**
+	 * Matched token location data.
+	 */
+	this._tokenStartOffset = 0;
+	this._tokenEndOffset = 0;
+	this._tokenStartLine = 1;
+	this._tokenEndLine = 1;
+	this._tokenStartColumn = 0;
+	this._tokenEndColumn = 0;
 
-    return this;
+	return this;
   },
 
   /**
    * Returns tokenizer states.
    */
   getStates() {
-    return this._states;
+	return this._states;
   },
 
   getCurrentState() {
-    return this._states[this._states.length - 1];
+	return this._states[this._states.length - 1];
   },
 
   pushState(state) {
-    this._states.push(state);
+	this._states.push(state);
   },
 
   begin(state) {
-    this.pushState(state);
+	this.pushState(state);
   },
 
   popState() {
-    if (this._states.length > 1) {
-      return this._states.pop();
-    }
-    return this._states[0];
+	if (this._states.length > 1) {
+	  return this._states.pop();
+	}
+	return this._states[0];
   },
 
   getNextToken() {
-    // Something was queued, return it.
-    if (this._tokensQueue.length > 0) {
-      return this.onToken(this._toToken(this._tokensQueue.shift()));
-    }
+	// Something was queued, return it.
+	if (this._tokensQueue.length > 0) {
+	  return this.onToken(this._toToken(this._tokensQueue.shift()));
+	}
 
-    if (!this.hasMoreTokens()) {
-      return this.onToken(EOF_TOKEN);
-    }
+	if (!this.hasMoreTokens()) {
+	  return this.onToken(EOF_TOKEN);
+	}
 
-    let string = this._string.slice(this._cursor);
-    let lexRulesForState = lexRulesByConditions[this.getCurrentState()];
+	let string = this._string.slice(this._cursor);
+	let lexRulesForState = lexRulesByConditions[this.getCurrentState()];
 
-    for (let i = 0; i < lexRulesForState.length; i++) {
-      let lexRuleIndex = lexRulesForState[i];
-      let lexRule = lexRules[lexRuleIndex];
+	for (let i = 0; i < lexRulesForState.length; i++) {
+	  let lexRuleIndex = lexRulesForState[i];
+	  let lexRule = lexRules[lexRuleIndex];
 
-      let matched = this._match(string, lexRule[0]);
+	  let matched = this._match(string, lexRule[0]);
 
-      // Manual handling of EOF token (the end of string). Return it
-      // as `EOF` symbol.
-      if (string === '' && matched === '') {
-        this._cursor++;
-      }
+	  // Manual handling of EOF token (the end of string). Return it
+	  // as `EOF` symbol.
+	  if (string === '' && matched === '') {
+		this._cursor++;
+	  }
 
-      if (matched !== null) {
-        yytext = matched;
-        yyleng = yytext.length;
-        let token = lexRule[1].call(this);
+	  if (matched !== null) {
+		yytext = matched;
+		yyleng = yytext.length;
+		let token = lexRule[1].call(this);
 
-        if (!token) {
-          return this.getNextToken();
-        }
+		if (!token) {
+		  return this.getNextToken();
+		}
 
-        // If multiple tokens are returned, save them to return
-        // on next `getNextToken` call.
+		// If multiple tokens are returned, save them to return
+		// on next `getNextToken` call.
 
-        if (Array.isArray(token)) {
-          const tokensToQueue = token.slice(1);
-          token = token[0];
-          if (tokensToQueue.length > 0) {
-            this._tokensQueue.unshift(...tokensToQueue);
-          }
-        }
+		if (Array.isArray(token)) {
+		  const tokensToQueue = token.slice(1);
+		  token = token[0];
+		  if (tokensToQueue.length > 0) {
+			this._tokensQueue.unshift(...tokensToQueue);
+		  }
+		}
 
-        return this.onToken(this._toToken(token, yytext));
-      }
-    }
+		return this.onToken(this._toToken(token, yytext));
+	  }
+	}
 
-    if (this.isEOF()) {
-      this._cursor++;
-      return EOF_TOKEN;
-    }
+	if (this.isEOF()) {
+	  this._cursor++;
+	  return EOF_TOKEN;
+	}
 
-    this.throwUnexpectedToken(
-      string[0],
-      this._currentLine,
-      this._currentColumn
-    );
+	this.throwUnexpectedToken(
+	  string[0],
+	  this._currentLine,
+	  this._currentColumn
+	);
   },
 
   /**
@@ -235,91 +235,91 @@ tokenizer = {
    * In addition, shows `line:column` location.
    */
   throwUnexpectedToken(symbol, line, column) {
-    const lineSource = this._string.split('\n')[line - 1];
-    let lineData = '';
+	const lineSource = this._string.split('\n')[line - 1];
+	let lineData = '';
 
-    if (lineSource) {
-      const pad = ' '.repeat(column);
-      lineData = '\n\n' + lineSource + '\n' + pad + '^\n';
-    }
+	if (lineSource) {
+	  const pad = ' '.repeat(column);
+	  lineData = '\n\n' + lineSource + '\n' + pad + '^\n';
+	}
 
-    throw new SyntaxError(
-      `${lineData}Unexpected token: "${symbol}" ` +
-      `at ${line}:${column}.`
-    );
+	throw new SyntaxError(
+	  `${lineData}Unexpected token: "${symbol}" ` +
+	  `at ${line}:${column}.`
+	);
   },
 
   getCursor() {
-    return this._cursor;
+	return this._cursor;
   },
 
   getCurrentLine() {
-    return this._currentLine;
+	return this._currentLine;
   },
 
   getCurrentColumn() {
-    return this._currentColumn;
+	return this._currentColumn;
   },
 
   _captureLocation(matched) {
-    const nlRe = /\n/g;
+	const nlRe = /\n/g;
 
-    // Absolute offsets.
-    this._tokenStartOffset = this._cursor;
+	// Absolute offsets.
+	this._tokenStartOffset = this._cursor;
 
-    // Line-based locations, start.
-    this._tokenStartLine = this._currentLine;
-    this._tokenStartColumn =
-      this._tokenStartOffset - this._currentLineBeginOffset;
+	// Line-based locations, start.
+	this._tokenStartLine = this._currentLine;
+	this._tokenStartColumn =
+	  this._tokenStartOffset - this._currentLineBeginOffset;
 
-    // Extract `\n` in the matched token.
-    let nlMatch;
-    while ((nlMatch = nlRe.exec(matched)) !== null) {
-      this._currentLine++;
-      this._currentLineBeginOffset = this._tokenStartOffset + nlMatch.index + 1;
-    }
+	// Extract `\n` in the matched token.
+	let nlMatch;
+	while ((nlMatch = nlRe.exec(matched)) !== null) {
+	  this._currentLine++;
+	  this._currentLineBeginOffset = this._tokenStartOffset + nlMatch.index + 1;
+	}
 
-    this._tokenEndOffset = this._cursor + matched.length;
+	this._tokenEndOffset = this._cursor + matched.length;
 
-    // Line-based locations, end.
-    this._tokenEndLine = this._currentLine;
-    this._tokenEndColumn = this._currentColumn =
-      (this._tokenEndOffset - this._currentLineBeginOffset);
+	// Line-based locations, end.
+	this._tokenEndLine = this._currentLine;
+	this._tokenEndColumn = this._currentColumn =
+	  (this._tokenEndOffset - this._currentLineBeginOffset);
   },
 
   _toToken(tokenType, yytext = '') {
-    return {
-      // Basic data.
-      type: tokenType,
-      value: yytext,
+	return {
+	  // Basic data.
+	  type: tokenType,
+	  value: yytext,
 
-      // Location data.
-      startOffset: this._tokenStartOffset,
-      endOffset: this._tokenEndOffset,
-      startLine: this._tokenStartLine,
-      endLine: this._tokenEndLine,
-      startColumn: this._tokenStartColumn,
-      endColumn: this._tokenEndColumn,
-    };
+	  // Location data.
+	  startOffset: this._tokenStartOffset,
+	  endOffset: this._tokenEndOffset,
+	  startLine: this._tokenStartLine,
+	  endLine: this._tokenEndLine,
+	  startColumn: this._tokenStartColumn,
+	  endColumn: this._tokenEndColumn,
+	};
   },
 
   isEOF() {
-    return this._cursor === this._string.length;
+	return this._cursor === this._string.length;
   },
 
   hasMoreTokens() {
-    return this._cursor <= this._string.length;
+	return this._cursor <= this._string.length;
   },
 
   _match(string, regexp) {
-    let matched = string.match(regexp);
-    if (matched) {
-      // Handle `\n` in the matched token to track line numbers.
-      this._captureLocation(matched[0]);
-      this._cursor += matched[0].length;
-      return matched[0];
-    }
-    return null;
+	let matched = string.match(regexp);
+	if (matched) {
+	  // Handle `\n` in the matched token to track line numbers.
+	  this._captureLocation(matched[0]);
+	  this._cursor += matched[0].length;
+	  return matched[0];
+	}
+	return null;
   },
 
   /**
@@ -327,7 +327,7 @@ tokenizer = {
    * just passes the token through.
    */
   onToken(token) {
-    return token;
+	return token;
   },
 };
 
@@ -356,185 +356,185 @@ const yyparse = {
    * Sets global parsing options.
    */
   setOptions(options) {
-    yy.options = options;
-    return this;
+	yy.options = options;
+	return this;
   },
 
   /**
    * Returns parsing options.
    */
   getOptions() {
-    return yy.options;
+	return yy.options;
   },
 
   /**
    * Parses a string.
    */
   parse(string, parseOptions) {
-    if (!tokenizer) {
-      throw new Error(`Tokenizer instance wasn't specified.`);
-    }
+	if (!tokenizer) {
+	  throw new Error(`Tokenizer instance wasn't specified.`);
+	}
 
-    tokenizer.initString(string);
+	tokenizer.initString(string);
 
-    /**
-     * If parse options are passed, override global parse options for
-     * this call, and later restore global options.
-     */
-    let globalOptions = yy.options;
-    if (parseOptions) {
-      yy.options = Object.assign({}, yy.options, parseOptions);
-    }
+	/**
+	 * If parse options are passed, override global parse options for
+	 * this call, and later restore global options.
+	 */
+	let globalOptions = yy.options;
+	if (parseOptions) {
+	  yy.options = Object.assign({}, yy.options, parseOptions);
+	}
 
-    /**
-     * Allow callers to do setup work based on the
-     * parsing string, and passed options.
-     */
-    yyparse.onParseBegin(string, tokenizer, yy.options);
+	/**
+	 * Allow callers to do setup work based on the
+	 * parsing string, and passed options.
+	 */
+	yyparse.onParseBegin(string, tokenizer, yy.options);
 
-    stack.length = 0;
-    stack.push(0);
+	stack.length = 0;
+	stack.push(0);
 
-    let token = tokenizer.getNextToken();
-    let shiftedToken = null;
+	let token = tokenizer.getNextToken();
+	let shiftedToken = null;
 
-    do {
-      if (!token) {
-        // Restore options.
-        yy.options = globalOptions;
-        unexpectedEndOfInput();
-      }
+	do {
+	  if (!token) {
+		// Restore options.
+		yy.options = globalOptions;
+		unexpectedEndOfInput();
+	  }
 
-      let state = stack[stack.length - 1];
-      let column = tokens[token.type];
+	  let state = stack[stack.length - 1];
+	  let column = tokens[token.type];
 
-      if (!table[state].hasOwnProperty(column)) {
-        yy.options = globalOptions;
-        unexpectedToken(token);
-      }
+	  if (!table[state].hasOwnProperty(column)) {
+		yy.options = globalOptions;
+		unexpectedToken(token);
+	  }
 
-      let entry = table[state][column];
+	  let entry = table[state][column];
 
-      // Shift action.
-      if (entry[0] === 's') {
-        let loc = null;
+	  // Shift action.
+	  if (entry[0] === 's') {
+		let loc = null;
 
-        if (yy.options.captureLocations) {
-          loc = {
-            startOffset: token.startOffset,
-            endOffset: token.endOffset,
-            startLine: token.startLine,
-            endLine: token.endLine,
-            startColumn: token.startColumn,
-            endColumn: token.endColumn,
-          };
-        }
+		if (yy.options.captureLocations) {
+		  loc = {
+			startOffset: token.startOffset,
+			endOffset: token.endOffset,
+			startLine: token.startLine,
+			endLine: token.endLine,
+			startColumn: token.startColumn,
+			endColumn: token.endColumn,
+		  };
+		}
 
-        shiftedToken = this.onShift(token);
+		shiftedToken = this.onShift(token);
 
-        stack.push(
-          {symbol: tokens[shiftedToken.type], semanticValue: shiftedToken.value, loc},
-          Number(entry.slice(1))
-        );
+		stack.push(
+		  {symbol: tokens[shiftedToken.type], semanticValue: shiftedToken.value, loc},
+		  Number(entry.slice(1))
+		);
 
-        token = tokenizer.getNextToken();
-      }
+		token = tokenizer.getNextToken();
+	  }
 
-      // Reduce action.
-      else if (entry[0] === 'r') {
-        let productionNumber = entry.slice(1);
-        let production = productions[productionNumber];
-        let hasSemanticAction = typeof production[2] === 'function';
-        let semanticValueArgs = hasSemanticAction ? [] : null;
+	  // Reduce action.
+	  else if (entry[0] === 'r') {
+		let productionNumber = entry.slice(1);
+		let production = productions[productionNumber];
+		let hasSemanticAction = typeof production[2] === 'function';
+		let semanticValueArgs = hasSemanticAction ? [] : null;
 
-        const locationArgs = (
-          hasSemanticAction && yy.options.captureLocations
-            ? []
-            : null
-        );
+		const locationArgs = (
+		  hasSemanticAction && yy.options.captureLocations
+			? []
+			: null
+		);
 
-        if (production[1] !== 0) {
-          let rhsLength = production[1];
-          while (rhsLength-- > 0) {
-            stack.pop();
-            let stackEntry = stack.pop();
+		if (production[1] !== 0) {
+		  let rhsLength = production[1];
+		  while (rhsLength-- > 0) {
+			stack.pop();
+			let stackEntry = stack.pop();
 
-            if (hasSemanticAction) {
-              semanticValueArgs.unshift(stackEntry.semanticValue);
+			if (hasSemanticAction) {
+			  semanticValueArgs.unshift(stackEntry.semanticValue);
 
-              if (locationArgs) {
-                locationArgs.unshift(stackEntry.loc);
-              }
-            }
-          }
-        }
+			  if (locationArgs) {
+				locationArgs.unshift(stackEntry.loc);
+			  }
+			}
+		  }
+		}
 
-        const reduceStackEntry = {symbol: production[0]};
+		const reduceStackEntry = {symbol: production[0]};
 
-        if (hasSemanticAction) {
-          yytext = shiftedToken ? shiftedToken.value : null;
-          yyleng = shiftedToken ? shiftedToken.value.length : null;
+		if (hasSemanticAction) {
+		  yytext = shiftedToken ? shiftedToken.value : null;
+		  yyleng = shiftedToken ? shiftedToken.value.length : null;
 
-          const semanticActionArgs = (
-            locationArgs !== null
-              ? semanticValueArgs.concat(locationArgs)
-              : semanticValueArgs
-          );
+		  const semanticActionArgs = (
+			locationArgs !== null
+			  ? semanticValueArgs.concat(locationArgs)
+			  : semanticValueArgs
+		  );
 
-          production[2](...semanticActionArgs);
+		  production[2](...semanticActionArgs);
 
-          reduceStackEntry.semanticValue = __;
+		  reduceStackEntry.semanticValue = __;
 
-          if (locationArgs) {
-            reduceStackEntry.loc = __loc;
-          }
-        }
+		  if (locationArgs) {
+			reduceStackEntry.loc = __loc;
+		  }
+		}
 
-        const nextState = stack[stack.length - 1];
-        const symbolToReduceWith = production[0];
+		const nextState = stack[stack.length - 1];
+		const symbolToReduceWith = production[0];
 
-        stack.push(
-          reduceStackEntry,
-          table[nextState][symbolToReduceWith]
-        );
-      }
+		stack.push(
+		  reduceStackEntry,
+		  table[nextState][symbolToReduceWith]
+		);
+	  }
 
-      // Accept.
-      else if (entry === 'acc') {
-        stack.pop();
-        let parsed = stack.pop();
+	  // Accept.
+	  else if (entry === 'acc') {
+		stack.pop();
+		let parsed = stack.pop();
 
-        if (stack.length !== 1 ||
-            stack[0] !== 0 ||
-            tokenizer.hasMoreTokens()) {
-          // Restore options.
-          yy.options = globalOptions;
-          unexpectedToken(token);
-        }
+		if (stack.length !== 1 ||
+			stack[0] !== 0 ||
+			tokenizer.hasMoreTokens()) {
+		  // Restore options.
+		  yy.options = globalOptions;
+		  unexpectedToken(token);
+		}
 
-        if (parsed.hasOwnProperty('semanticValue')) {
-          yy.options = globalOptions;
-          yyparse.onParseEnd(parsed.semanticValue);
-          return parsed.semanticValue;
-        }
+		if (parsed.hasOwnProperty('semanticValue')) {
+		  yy.options = globalOptions;
+		  yyparse.onParseEnd(parsed.semanticValue);
+		  return parsed.semanticValue;
+		}
 
-        yyparse.onParseEnd();
+		yyparse.onParseEnd();
 
-        // Restore options.
-        yy.options = globalOptions;
-        return true;
-      }
+		// Restore options.
+		yy.options = globalOptions;
+		return true;
+	  }
 
-    } while (tokenizer.hasMoreTokens() || stack.length > 1);
+	} while (tokenizer.hasMoreTokens() || stack.length > 1);
   },
 
   setTokenizer(customTokenizer) {
-    tokenizer = customTokenizer;
-    return yyparse;
+	tokenizer = customTokenizer;
+	return yyparse;
   },
 
   getTokenizer() {
-    return tokenizer;
+	return tokenizer;
   },
 
   onParseBegin(string, tokenizer, options) {},
@@ -545,7 +545,7 @@ const yyparse = {
    * just passes the token through.
    */
   onShift(token) {
-    return token;
+	return token;
   },
 };
 
@@ -553,13 +553,13 @@ const yyparse = {
 
 function unexpectedToken(token) {
   if (token.type === EOF) {
-    unexpectedEndOfInput();
+	unexpectedEndOfInput();
   }
 
   tokenizer.throwUnexpectedToken(
-    token.value,
-    token.startLine,
-    token.startColumn
+	token.value,
+	token.startLine,
+	token.startColumn
   );
 }
 

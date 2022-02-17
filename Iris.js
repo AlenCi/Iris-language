@@ -6,174 +6,250 @@ const Transformer = require("./transform/Transformer");
  * Made by Alen Cigler
  */
 class Iris {
-    /**
-     * Evaluates an expression in the given env
-     */
-    constructor(global = GlobalEnvironment) {
-        this.global = global;
-        this._transformer = new Transformer();
-    }
+	/**
+	 * Evaluates an expression in the given env
+	 */
+	constructor(global = GlobalEnvironment) {
+		this.global = global;
+		this._transformer = new Transformer();
+	}
 
-    /**
-     * Evaluates an expression in the given env
-     */
-    eval(exp, env = this.global) {
-        /*------------------ Self-evaluating expressions -----------------*/
+	/**
+	 * Evaluates global code by wrapping it into a block implicitly
+	 */
+	evalGlobal(expressions){
+		return this._evalBlock(["block",expressions], this.global);
+	}
 
-        if (this._isNumber(exp)) {
-            return exp;
-        }
-        if (this._isString(exp)) {
-            return exp.slice(1, -1);
-        }
+	/**
+	 * Evaluates an expression in the given env
+	 */
+	eval(exp, env = this.global) {
+		/*------------------ Self-evaluating expressions -----------------*/
 
-        /*------------------ Block -----------------*/
+		if (this._isNumber(exp)) {
+			return exp;
+		}
+		if (this._isString(exp)) {
+			return exp.slice(1, -1);
+		}
 
-        if (exp[0] === "begin") {
-            const blockEnv = new Environment({}, env);
-            return this._evalBlock(exp, blockEnv); // Evaluates the whole block in a nested environment
-        }
+		/*------------------ Block -----------------*/
 
-        /*------------------ Variable declaration -----------------*/
+		if (exp[0] === "begin") {
+			const blockEnv = new Environment({}, env);
+			return this._evalBlock(exp, blockEnv); // Evaluates the whole block in a nested environment
+		}
 
-        if (exp[0] === "var") {
-            const [_, name, value] = exp;
+		/*------------------ Variable declaration -----------------*/
 
-            return env.define(name, this.eval(value, env));
-        }
+		if (exp[0] === "var") {
+			const [_, name, value] = exp;
 
-        /*------------------ Variable set -----------------*/
+			return env.define(name, this.eval(value, env));
+		}
 
-        if (exp[0] === "set") {
-            const [_, name, value] = exp;
+		/*------------------ Variable set -----------------*/
 
-            return env.assign(name, this.eval(value, env));
-        }
+		if (exp[0] === "set") {
+			const [_, ref, value] = exp;
 
-        /*------------------ Variable access -----------------*/
-        if (this._isVariableName(exp)) {
-            return env.lookup(exp);
-        }
+			// Prop assignment
+			if (ref[0] === "prop") {
+				const [_, instance, propName] = ref;
+				const instanceEnv = this.eval(instance, env);
+				return instanceEnv.define(propName, this.eval(value, env));
+			}
 
-        /*------------------ If expression -----------------*/
+			// Var assignment
+			return env.assign(ref, this.eval(value, env));
+		}
 
-        if (exp[0] === "if") {
-            /*
-        Main gets evaluated when true
-        Alternate gets evaluated when false
-      */
-            const [_, condition, main, alternate] = exp;
-            if (this.eval(condition, env)) {
-                return this.eval(main, env);
-            } else {
-                return this.eval(alternate, env);
-            }
-        }
+		/*------------------ Variable access -----------------*/
+		if (this._isVariableName(exp)) {
+			return env.lookup(exp);
+		}
 
-        /*------------------ While expression -----------------*/
+		/*------------------ If expression -----------------*/
 
-        if (exp[0] === "while") {
-            const [_, condition, body] = exp;
-            let result;
-            while (this.eval(condition, env)) {
-                result = this.eval(body, env);
-            }
-            return result;
-        }
+		if (exp[0] === "if") {
+			/*
+		Main gets evaluated when true
+		Alternate gets evaluated when false
+	  */
+			const [_, condition, main, alternate] = exp;
+			if (this.eval(condition, env)) {
+				return this.eval(main, env);
+			} else {
+				return this.eval(alternate, env);
+			}
+		}
 
-        /*------------------ Function declaration -----------------*/
+		/*------------------ While expression -----------------*/
 
-        // This is syntactic sugar for lambda variables
+		if (exp[0] === "while") {
+			const [_, condition, body] = exp;
+			let result;
+			while (this.eval(condition, env)) {
+				result = this.eval(body, env);
+			}
+			return result;
+		}
 
-        if (exp[0] === "def") {
-            // JIT-transpile to variable declaration
+		/*------------------ Function declaration -----------------*/
 
-            const varExp = this._transformer.transformDefToVarLambda(exp);
-            return this.eval(varExp, env);
-        }
+		// This is syntactic sugar for lambda variables
 
-        if (exp[0] === "switch") {
-            const ifExp = this._transformer.transformSwitchToIfNested(exp);
+		if (exp[0] === "def") {
+			// JIT-transpile to variable declaration
 
-            return this.eval(ifExp, env);
-        }
+			const varExp = this._transformer.transformDefToVarLambda(exp);
+			return this.eval(varExp, env);
+		}
 
-        if(exp[0] === "for"){
-            const forExp = this._transformer.transformForToWhile(exp);
-            return this.eval(forExp,env);
-        }
+		/*------------------ Syntactic sugar -----------------*/
 
-        /*------- Lambda functions -------*/
+		if (exp[0] === "switch") {
+			const ifExp = this._transformer.transformSwitchToIfNested(exp);
 
-        if (exp[0] === "lambda") {
-            const [_, params, body] = exp;
-            return {
-                params,
-                body,
-                env,
-            };
-        }
+			return this.eval(ifExp, env);
+		}
 
-        /*------------------ Function calls -----------------*/
+		if (exp[0] === "for") {
+			const forExp = this._transformer.transformForToWhile(exp);
+			return this.eval(forExp, env);
+		}
 
-        if (Array.isArray(exp)) {
-            const fn = this.eval(exp[0], env);
+		if (exp[0] === "++") {
+			const incExp = this._transformer.transformIncToAdd(exp);
+			return this.eval(incExp, env);
+		}
 
-            const args = exp.slice(1).map((arg) => this.eval(arg, env));
+		if (exp[0] === "--") {
+			const decExp = this._transformer.transformDecToSub(exp);
+			return this.eval(decExp, env);
+		}
 
-            /*------- Native function -------*/
+		/*------- Lambda functions -------*/
 
-            if (typeof fn === "function") {
-                return fn(...args);
-            }
+		if (exp[0] === "lambda") {
+			const [_, params, body] = exp;
+			return {
+				params,
+				body,
+				env,
+			};
+		}
 
-            /*------- Custom function -------*/
+		/*------------------ Class declaration -----------------*/
 
-            const activationRecord = {};
+		if (exp[0] === "class") {
+			const [_, name, parent, body] = exp;
+			// Class is an env
 
-            fn.params.forEach((param, index) => {
-                activationRecord[param] = args[index];
-            });
+			const parentEnv = this.eval(parent, env) || env;
 
-            const activationEnv = new Environment(activationRecord, fn.env);
+			const classEnv = new Environment({}, parentEnv);
 
-            return this._evalBody(fn.body, activationEnv);
-        }
+			// Body is evaled in the class env
+			this._evalBody(body, classEnv);
 
-        throw `Unimplemented: ${JSON.stringify(exp)}`;
-    }
+			// Class by name
+			return env.define(name, classEnv);
+		}
 
-    /*------- Helper methods -------*/
+		
+		/*------------------ Class instantiation -----------------*/
 
-    _evalBody(body, env) {
-        // Method body can be either a block or an expression
-        if (body[0] === "begin") {
-            return this._evalBlock(body, env);
-        }
-        return this.eval(body, env);
-    }
+		if (exp[0] === "new") {
+			const classEnv = this.eval(exp[1], env);
+			/**
+			 * Parent component of the instance is
+			 * set to its class
+			 */
+			const instanceEnv = new Environment({}, classEnv);
 
-    _evalBlock(block, env) {
-        // Evaluates every expression within a block
-        let result;
-        const [_tag, ...expressions] = block;
-        expressions.forEach((exp) => {
-            result = this.eval(exp, env);
-        });
-        return result;
-    }
+			const args = exp.slice(2).map((arg) => this.eval(arg, env));
+			this._callUserDefinedFunction(classEnv.lookup("constructor"), [
+				instanceEnv,
+				...args,
+			]);
 
-    _isNumber(exp) {
-        return typeof exp === "number";
-    }
-    _isString(exp) {
-        return (
-            typeof exp === "string" && exp[0] === '"' && exp.slice(-1) === '"'
-        );
-    }
-    _isVariableName(exp) {
-        return typeof exp === "string" && /^[+\-*/<>=a-zA-Z0-9_]*$/.test(exp); // Symbols are variables
-    }
+			return instanceEnv;
+		}
+
+		/*------------------ Property access -----------------*/
+
+		if (exp[0] === "prop") {
+			const [_, instance, name] = exp;
+			const instanceEnv = this.eval(instance, env);
+			return instanceEnv.lookup(name);
+		}
+		/*------------------ Function calls -----------------*/
+
+		if (Array.isArray(exp)) {
+			const fn = this.eval(exp[0], env);
+
+			const args = exp.slice(1).map((arg) => this.eval(arg, env));
+
+			/*------- Native function -------*/
+
+			if (typeof fn === "function") {
+				return fn(...args);
+			}
+
+			/*------- Custom function -------*/
+
+			return this._callUserDefinedFunction(fn, args);
+		}
+
+
+
+		throw `Unimplemented: ${JSON.stringify(exp)}`;
+	}
+
+	_callUserDefinedFunction(fn, args) {
+		const activationRecord = {};
+
+		fn.params.forEach((param, index) => {
+			activationRecord[param] = args[index];
+		});
+
+		const activationEnv = new Environment(activationRecord, fn.env);
+		return this._evalBody(fn.body, activationEnv);
+	}
+
+	/*------- Helper methods -------*/
+
+	_evalBody(body, env) {
+		// Method body can be either a block or an expression
+		if (body[0] === "begin") {
+			return this._evalBlock(body, env);
+		}
+		return this.eval(body, env);
+	}
+
+	_evalBlock(block, env) {
+		// Evaluates every expression within a block
+		let result;
+		const [_tag, ...expressions] = block;
+		expressions.forEach((exp) => {
+			result = this.eval(exp, env);
+		});
+		return result;
+	}
+
+	_isNumber(exp) {
+		return typeof exp === "number";
+	}
+	_isString(exp) {
+		return (
+			typeof exp === "string" && exp[0] === '"' && exp.slice(-1) === '"'
+		);
+	}
+	_isVariableName(exp) {
+		return typeof exp === "string" && /^[+\-*/<>=a-zA-Z0-9_]*$/.test(exp); // Symbols are variables
+	}
 }
 
 /**
@@ -181,55 +257,55 @@ class Iris {
  */
 
 const GlobalEnvironment = new Environment({
-    null: null,
-    true: true,
-    false: false,
-    VERSION: "0.1",
+	null: null,
+	true: true,
+	false: false,
+	VERSION: "0.1",
 
-    /*------------------ Math operations -----------------*/
+	/*------------------ Math operations -----------------*/
 
-    // String property accessors that map to methods
+	// String property accessors that map to methods
 
-    "+"(op1, op2) {
-        return op1 + op2;
-    },
-    "-"(op1, op2 = null) {
-        if (op2 == null) {
-            return -op1;
-        }
-        return op1 - op2;
-    },
-    "*"(op1, op2) {
-        return op1 * op2;
-    },
-    "/"(op1, op2) {
-        return op1 / op2;
-    },
-    /*------------------ Comparison operators -----------------*/
-    ">"(op1, op2) {
-        return op1 > op2;
-    },
-    "<"(op1, op2) {
-        return op1 < op2;
-    },
-    ">="(op1, op2) {
-        return op1 >= op2;
-    },
-    "<="(op1, op2) {
-        return op1 <= op2;
-    },
-    "="(op1, op2) {
-        return op1 === op2;
-    },
-    "!="(op1, op2) {
-        return op1 !== op2;
-    },
+	"+"(op1, op2) {
+		return op1 + op2;
+	},
+	"-"(op1, op2 = null) {
+		if (op2 == null) {
+			return -op1;
+		}
+		return op1 - op2;
+	},
+	"*"(op1, op2) {
+		return op1 * op2;
+	},
+	"/"(op1, op2) {
+		return op1 / op2;
+	},
+	/*------------------ Comparison operators -----------------*/
+	">"(op1, op2) {
+		return op1 > op2;
+	},
+	"<"(op1, op2) {
+		return op1 < op2;
+	},
+	">="(op1, op2) {
+		return op1 >= op2;
+	},
+	"<="(op1, op2) {
+		return op1 <= op2;
+	},
+	"="(op1, op2) {
+		return op1 === op2;
+	},
+	"!="(op1, op2) {
+		return op1 !== op2;
+	},
 
-    /*------- Console output -------*/
+	/*------- Console output -------*/
 
-    print(...args) {
-        console.log(...args);
-    },
+	print(...args) {
+		console.log(...args);
+	},
 });
 
 module.exports = Iris;

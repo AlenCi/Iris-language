@@ -25,6 +25,8 @@ Practising design paradigms and version control is also a side goal of this proj
 * [x] Add loops
 * [x] Add (native) functions
 * [x] Add lambda functions
+* [x] Add syntactic sugar (for, switch, ect.)
+* [] Add OOP
 
 More will be added as the project progresses.
 
