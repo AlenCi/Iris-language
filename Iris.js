@@ -1,5 +1,8 @@
 const Environment = require("./Environment");
 const Transformer = require("./transform/Transformer");
+const irisParser = require("./parser/irisParser");
+
+const fs = require("fs");
 
 /**
  * Iris Interpreter
@@ -17,8 +20,8 @@ class Iris {
 	/**
 	 * Evaluates global code by wrapping it into a block implicitly
 	 */
-	evalGlobal(expressions){
-		return this._evalBlock(expressions, this.global);
+	evalGlobal(expressions) {
+		return this._evalBody(expressions, this.global);
 	}
 
 	/**
@@ -160,21 +163,19 @@ class Iris {
 		}
 
 		/*------------------ Super expressions -----------------*/
-		
-		
-		if(exp[0] === "super"){
+
+		if (exp[0] === "super") {
 			const [_, name] = exp;
-			return this.eval(name,env).parent;
+			return this.eval(name, env).parent;
 		}
 
-		
 		/*------------------ Class instantiation -----------------*/
 
 		if (exp[0] === "new") {
 			// Obtain the class in our current environment
 			const classEnv = this.eval(exp[1], env);
 			/**
-			 * The instance is 
+			 * The instance is
 			 * also an environment
 			 * Parent component of the instance is
 			 * set to its class
@@ -200,6 +201,38 @@ class Iris {
 			const instanceEnv = this.eval(instance, env);
 			return instanceEnv.lookup(name);
 		}
+
+		/*------------------ Module -----------------*/
+
+		if (exp[0] === "module") {
+			const [_, name, body] = exp;
+
+			const moduleEnv = new Environment({}, env);
+
+			this._evalBody(body, moduleEnv);
+
+			return env.define(name, moduleEnv);
+		}
+
+		/*------------------ Import module -----------------*/
+
+		if (exp[0] === "import") {
+			//todo  Cache modules
+
+			const [_, name] = exp;
+
+			const moduleSrc = fs.readFileSync(
+				`${__dirname}/modules/${name}.iris`,
+				"utf-8"
+			);
+
+			const body = irisParser.parse(`(begin ${moduleSrc})`);
+
+			const moduleExp = ["module", name, body];
+
+			return this.eval(moduleExp, this.global);
+		}
+
 		/*------------------ Function calls -----------------*/
 
 		if (Array.isArray(exp)) {
@@ -217,8 +250,6 @@ class Iris {
 
 			return this._callUserDefinedFunction(fn, args);
 		}
-
-
 
 		throw `Unimplemented: ${JSON.stringify(exp)}`;
 	}

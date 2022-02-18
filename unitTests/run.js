@@ -14,6 +14,8 @@ const tests = [
 	require("./for-test.js"),
 	require("./incDec-test.js"),
 	require("./class-test.js"),
+	require("./module-test.js"),
+	require("./import-test.js"),
 ];
 
 
