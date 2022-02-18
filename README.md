@@ -26,7 +26,8 @@ Practising design paradigms and version control is also a side goal of this proj
 * [x] Add (native) functions
 * [x] Add lambda functions
 * [x] Add syntactic sugar (for, switch, ect.)
-* [] Add OOP
+* [ ] Add OOP
+* [ ] Add module / lib support
 
 More will be added as the project progresses.
 
@@ -35,10 +36,12 @@ More will be added as the project progresses.
 
 TBA
 
+<!-- Syntax -->
 ## Syntax
 
 TBA
 
+<!-- Documentation -->
 ## Documentation
 
 TBA

@@ -16,7 +16,6 @@ const tests = [
 	require("./class-test.js"),
 ];
 
-/*------------------ Global env -----------------*/
 
 const iris = new Iris();
 

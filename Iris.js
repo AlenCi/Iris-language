@@ -18,7 +18,7 @@ class Iris {
 	 * Evaluates global code by wrapping it into a block implicitly
 	 */
 	evalGlobal(expressions){
-		return this._evalBlock(["block",expressions], this.global);
+		return this._evalBlock(expressions, this.global);
 	}
 
 	/**
@@ -147,6 +147,7 @@ class Iris {
 			const [_, name, parent, body] = exp;
 			// Class is an env
 
+			// Inheritance support
 			const parentEnv = this.eval(parent, env) || env;
 
 			const classEnv = new Environment({}, parentEnv);
@@ -158,18 +159,32 @@ class Iris {
 			return env.define(name, classEnv);
 		}
 
+		/*------------------ Super expressions -----------------*/
+		
+		
+		if(exp[0] === "super"){
+			const [_, name] = exp;
+			return this.eval(name,env).parent;
+		}
+
 		
 		/*------------------ Class instantiation -----------------*/
 
 		if (exp[0] === "new") {
+			// Obtain the class in our current environment
 			const classEnv = this.eval(exp[1], env);
 			/**
+			 * The instance is 
+			 * also an environment
 			 * Parent component of the instance is
 			 * set to its class
 			 */
 			const instanceEnv = new Environment({}, classEnv);
 
+			// Obtain the arguments and evaluate them in the current environment
 			const args = exp.slice(2).map((arg) => this.eval(arg, env));
+
+			// Call the constructor in the instance environment with the arguments
 			this._callUserDefinedFunction(classEnv.lookup("constructor"), [
 				instanceEnv,
 				...args,
